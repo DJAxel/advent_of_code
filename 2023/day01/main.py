@@ -48,7 +48,7 @@ def get_config_value(string: str, include_word_digits: bool):
 
 
 if __name__ == "__main__":
-    with open(r"/2023/day01/input.txt", "r", encoding="utf8") as data:
+    with open(r"./2023/day01/input.txt", "r", encoding="utf8") as data:
         total1 = 0
         total2 = 0
 
