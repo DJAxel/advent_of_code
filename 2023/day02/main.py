@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 
 def get_set_from_str(set_str: str) -> dict:
@@ -45,9 +45,17 @@ def is_game_possible_with_cubes(sets: List[dict], cubes_in_bag: dict) -> bool:
     return True
 
 
-if __name__ == "__main__":
-    games = get_games_from_input(r"./2023/day02/input.txt")
-    cubes_in_bag = {"red": 12, "green": 13, "blue": 14}
+def get_max_cube_amounts(sets: List[Dict[str, int]]) -> Dict[str, int]:
+    max_cube_amounts = {}
+    for set in sets:
+        for color, amount in set.items():
+            if color not in max_cube_amounts or max_cube_amounts[color] < amount:
+                max_cube_amounts[color] = amount
+
+    return max_cube_amounts
+
+
+def part1(games: List[dict], cubes_in_bag: Dict[str, int]) -> int:
     total = 0
 
     for game in games:
@@ -55,25 +63,27 @@ if __name__ == "__main__":
         if b:
             total += game["id"]
 
-    print(total)
+    return total
 
 
-# 1. Puzzle input to list of objects
-# {
-#     id: 1
-#     sets: [
-#         {
-#             "red": 7,
-#             "blue": 8,
-#         },
-#         {
-#             "blue": 6,
-#             "red": 6,
-#             "green": 2
-#         },
-#     ]
-# }
-#
-# 2. for each game
-# 3. for each set, check if the set is possible with the game (12 red, 13 green, 14 blue)
-# 4. If so (for all sets in the game), add the game id to the total
+def part2(games: List[Dict[str, int]]) -> int:
+    total = 0
+
+    for game in games:
+        amounts = get_max_cube_amounts(game["sets"])
+        power = 1
+        for amount in amounts.values():
+            power *= amount
+
+        total += power
+
+    return total
+
+
+if __name__ == "__main__":
+    games = get_games_from_input(r"./2023/day02/input.txt")
+    answer1 = part1(games, {"red": 12, "green": 13, "blue": 14})
+    answer2 = part2(games)
+
+    print(answer1)
+    print(answer2)
