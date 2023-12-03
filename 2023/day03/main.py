@@ -11,11 +11,23 @@ def print_surroundings(lines: list[str], line_start, pos_start, length):
     print(to_print)
 
 
+def get_numbers_around_gear(lines: list[str], pos: tuple[int, int]) -> list[int]:
+    numbers: list = []
+    positions = (
+        [(line_nr - 1, i - x) for x in range(3)]
+        + [(line_nr + 1, i - x) for x in range(3)]
+        + [(line_nr, i - 1), (line_nr, i + 1)]
+    )
+    for pos in positions:
+        if lines[pos[0]][pos[1]].isdigit():
+
+
 if __name__ == "__main__":
     with open("./2023/day03/test_input.txt", "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
 
     part_numbers = []
+    gear_ratios = []
 
     for line_nr, line in enumerate(lines):
         number_string = ""
@@ -47,5 +59,13 @@ if __name__ == "__main__":
                         pass
 
                 number_string = ""
+
+            if char == "*":
+                numbers = get_numbers_around_gear(lines, pos)
+                if len(numbers) == 2:
+                    gear_ratios.append(numbers[0] * numbers[1])
+
+                
+
 
     print(sum(part_numbers))
