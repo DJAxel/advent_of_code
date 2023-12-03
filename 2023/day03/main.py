@@ -1,5 +1,18 @@
+def print_surroundings(lines: list[str], line_start, pos_start, length):
+    to_print = "\n"
+    for l in range(3):
+        for i in range(length):
+            try:
+                to_print += lines[line_start + l][pos_start + i]
+            except IndexError:
+                pass
+
+        to_print += "\n"
+    print(to_print)
+
+
 if __name__ == "__main__":
-    with open("./2023/day03/input.txt", "r", encoding="utf8") as file:
+    with open("./2023/day03/test_input.txt", "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
 
     part_numbers = []
@@ -10,6 +23,12 @@ if __name__ == "__main__":
             if char.isdigit():
                 number_string += char
             elif number_string != "":
+                print_surroundings(
+                    lines,
+                    line_nr - 1,
+                    i - len(number_string) - 1,
+                    len(number_string) + 2,
+                )
                 positions = [
                     (line_nr - 1, i - x) for x in range(len(number_string) + 2)
                 ]
