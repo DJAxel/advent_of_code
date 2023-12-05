@@ -1,3 +1,6 @@
+import time
+
+
 class RangeConverter:
     source_range_start: int
     source_range_end: int
@@ -13,6 +16,12 @@ class RangeConverter:
             return value + self.offset
 
         return value
+
+    def convert_range(self, range: tuple[int, int]) -> tuple[int, int]:
+        return (range[0] + self.offset, range[1] + self.offset)
+
+    def to_range(self) -> tuple[int, int]:
+        return (self.source_range_start, self.source_range_end)
 
 
 class Almanac:
@@ -42,12 +51,15 @@ class Almanac:
         return self._seeds
 
     @property
-    def seed_ranges(self) -> list[int]:
+    def seed_ranges(self) -> list[tuple[int, int]]:
+        seed_ranges: list[tuple[int, int]] = []
+
         for i in range(int(len(self.seeds) / 2)):
             start_seed = self.seeds[i * 2]
             range_length = self.seeds[i * 2 + 1]
-            for seed in range(start_seed, start_seed + range_length):
-                yield seed
+            seed_ranges.append((start_seed, start_seed + range_length - 1))
+
+        return seed_ranges
 
     @property
     def maps(self) -> dict[str, list[RangeConverter]]:
@@ -67,16 +79,114 @@ class Almanac:
 
         return value
 
+    def merge_overlapping_ranges(self, ranges: list[tuple[int, int]]):
+        ranges = ranges.copy()
+        for i, r1 in enumerate(ranges):
+            if r1 is None:
+                continue
+            for j, r2 in enumerate(ranges):
+                if i == j or r2 is None:
+                    continue
+
+                overlap = self.get_range_overlap(r1, r2)
+
+                if overlap == None and r1[1] != r2[0] - 1 and r2[1] != r1[0] - 1:
+                    continue
+
+                ranges[i] = (min(r1[0], r2[0]), max(r1[1], r2[1]))
+                ranges[j] = None
+
+        return list(filter(lambda r: r is not None, ranges))
+
+    @staticmethod
+    def get_range_overlap(
+        range1: tuple[int, int], range2: tuple[int, int]
+    ) -> tuple[int, int] | None:
+        overlap = (
+            max(range1[0], range2[0]),
+            min(range1[1], range2[1]),
+        )
+
+        if overlap[0] < overlap[1]:
+            return overlap
+
+        return None
+
+    def convert_ranges_with_converter(
+        self, ranges: list[tuple[int, int]], converter: RangeConverter
+    ) -> list[tuple[int, int]]:
+        unchanged_ranges: list[tuple[int, int]] = []
+        new_ranges: list[tuple[int, int]] = []
+        for r in ranges:
+            overlap = Almanac.get_range_overlap(r, (converter.to_range()))
+
+            if overlap is None:
+                unchanged_ranges.append(r)
+                continue
+
+            if r[0] < overlap[0]:
+                unchanged_ranges.append((r[0], overlap[0] - 1))
+
+            new_ranges.append(converter.convert_range(overlap))
+
+            if r[1] > overlap[1]:
+                unchanged_ranges.append((overlap[1] + 1, r[1]))
+
+        return (
+            unchanged_ranges,
+            new_ranges,
+        )
+
+    def convert_range_with_converters(
+        self, r: tuple[int, int], converters: list[RangeConverter]
+    ):
+        unchanged_ranges: list[tuple[int, int]] = [r]
+        new_ranges: list[tuple[int, int]] = []
+
+        for converter in converters:
+            outcome = self.convert_ranges_with_converter(unchanged_ranges, converter)
+            unchanged_ranges = outcome[0]
+            if len(outcome[1]):
+                new_ranges += outcome[1]
+
+        merged = unchanged_ranges + new_ranges
+        return merged
+
+    def convert_ranges_with_map(
+        self, ranges: list[tuple[int, int]], map_rules: list[RangeConverter]
+    ):
+        new_ranges = []
+        for r in ranges:
+            ranges_to_add = self.convert_range_with_converters(r, map_rules)
+            new_ranges += ranges_to_add
+
+        return self.merge_overlapping_ranges(new_ranges)
+
 
 if __name__ == "__main__":
-    with open("./2023/day05/test_input.txt", "r", encoding="utf8") as file:
+    with open("./2023/day05/input.txt", "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
         almanac = Almanac(lines)
 
-        for seed_range in [almanac.seeds, almanac.seed_ranges]:
-            lowest_location_number: int | None = None
-            for seed in seed_range:
-                location = almanac.get_location_for_seed(seed)
-                if not lowest_location_number or lowest_location_number > location:
-                    lowest_location_number = location
-            print(lowest_location_number)
+        # Part 1
+        lowest_location_number: int | None = None
+        for seed in almanac.seeds:
+            location = almanac.get_location_for_seed(seed)
+            if not lowest_location_number or lowest_location_number > location:
+                lowest_location_number = location
+        print(lowest_location_number)
+
+        # Part 2
+        start = time.perf_counter()
+        ranges = almanac.seed_ranges
+        for map_name, map_rules in almanac.maps.items():
+            ranges = almanac.convert_ranges_with_map(ranges, map_rules)
+
+        lowest_location_number = None
+        for r in ranges:
+            if not lowest_location_number or r[0] < lowest_location_number:
+                lowest_location_number = r[0]
+
+        print(lowest_location_number)
+        end = time.perf_counter()
+        print(end - start)
