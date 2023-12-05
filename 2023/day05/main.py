@@ -42,6 +42,14 @@ class Almanac:
         return self._seeds
 
     @property
+    def seed_ranges(self) -> list[int]:
+        for i in range(int(len(self.seeds) / 2)):
+            start_seed = self.seeds[i * 2]
+            range_length = self.seeds[i * 2 + 1]
+            for seed in range(start_seed, start_seed + range_length):
+                yield seed
+
+    @property
     def maps(self) -> dict[str, list[RangeConverter]]:
         return self._maps
 
@@ -50,7 +58,7 @@ class Almanac:
 
     def get_location_for_seed(self, seed: int) -> int:
         value = seed
-        for map_name, range_converters in self.maps.items():
+        for range_converters in self.maps.values():
             for range_converter in range_converters:
                 converted = range_converter.convert(value)
                 if converted != value:
@@ -61,12 +69,14 @@ class Almanac:
 
 
 if __name__ == "__main__":
-    with open("./2023/day05/input.txt", "r", encoding="utf8") as file:
+    with open("./2023/day05/test_input.txt", "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
         almanac = Almanac(lines)
-        lowest_location_number: int | None = None
-        for seed in almanac.seeds:
-            location = almanac.get_location_for_seed(seed)
-            if not lowest_location_number or lowest_location_number > location:
-                lowest_location_number = location
-    print(lowest_location_number)
+
+        for seed_range in [almanac.seeds, almanac.seed_ranges]:
+            lowest_location_number: int | None = None
+            for seed in seed_range:
+                location = almanac.get_location_for_seed(seed)
+                if not lowest_location_number or lowest_location_number > location:
+                    lowest_location_number = location
+            print(lowest_location_number)
