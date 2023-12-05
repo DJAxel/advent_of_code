@@ -68,17 +68,6 @@ class Almanac:
     def _get_nums_list_from_string(self, string: str) -> list[int]:
         return list(map(lambda n: int(n), string.split()))
 
-    def get_location_for_seed(self, seed: int) -> int:
-        value = seed
-        for range_converters in self.maps.values():
-            for range_converter in range_converters:
-                converted = range_converter.convert(value)
-                if converted != value:
-                    value = converted
-                    break
-
-        return value
-
     def merge_overlapping_ranges(self, ranges: list[tuple[int, int]]):
         ranges = ranges.copy()
         for i, r1 in enumerate(ranges):
@@ -107,7 +96,7 @@ class Almanac:
             min(range1[1], range2[1]),
         )
 
-        if overlap[0] < overlap[1]:
+        if overlap[0] <= overlap[1]:
             return overlap
 
         return None
@@ -168,25 +157,18 @@ if __name__ == "__main__":
         lines = [line.rstrip() for line in file]
         almanac = Almanac(lines)
 
-        # Part 1
-        lowest_location_number: int | None = None
-        for seed in almanac.seeds:
-            location = almanac.get_location_for_seed(seed)
-            if not lowest_location_number or lowest_location_number > location:
-                lowest_location_number = location
-        print(lowest_location_number)
+        part1_ranges = [(s, s) for s in almanac.seeds]
+        part2_ranges = almanac.seed_ranges
 
-        # Part 2
-        start = time.perf_counter()
-        ranges = almanac.seed_ranges
-        for map_name, map_rules in almanac.maps.items():
-            ranges = almanac.convert_ranges_with_map(ranges, map_rules)
+        for ranges in [part1_ranges, part2_ranges]:
+            start = time.perf_counter()
+            lowest_location_number: int | None = None
+            for map_name, map_rules in almanac.maps.items():
+                ranges = almanac.convert_ranges_with_map(ranges, map_rules)
 
-        lowest_location_number = None
-        for r in ranges:
-            if not lowest_location_number or r[0] < lowest_location_number:
-                lowest_location_number = r[0]
+            for r in ranges:
+                if not lowest_location_number or r[0] < lowest_location_number:
+                    lowest_location_number = r[0]
 
-        print(lowest_location_number)
-        end = time.perf_counter()
-        print(end - start)
+            print(lowest_location_number)
+            print(f"Running time: {time.perf_counter() - start}")
