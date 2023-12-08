@@ -1,3 +1,4 @@
+from math import lcm
 import re
 
 
@@ -7,7 +8,9 @@ class Location:
         self.next_locations = (left_location_name, right_location_name)
 
     def __repr__(self) -> str:
-        return f"Location({self.name}, {self.left_location_name}, {self.right_location_name})"
+        return (
+            f"Location({self.name}, {self.next_locations[0]}, {self.next_locations[1]})"
+        )
 
     def get_next_location_name(self, instruction: str) -> str:
         loc_index = 0 if instruction == "L" else 1
@@ -31,7 +34,6 @@ class LocationIterator:
         self.locations = locations
         self.cur_loc = self.get_location(start_location_name)
         self.stop_condition = stop_condition
-        # self.steps = 0
 
     def get_location(self, location_name: str) -> Location:
         return next(loc for loc in self.locations if loc.name == location_name)
@@ -40,7 +42,6 @@ class LocationIterator:
         self.cur_loc = self.get_location(
             self.cur_loc.get_next_location_name(instruction)
         )
-        # self.steps += 1
 
         return bool(re.search(self.stop_condition, self.cur_loc.name))
 
@@ -55,10 +56,23 @@ if __name__ == "__main__":
         for params in [tuple(re.findall(r"\w{3}", line)) for line in lines[1:]]
     ]
 
-    locationIterator = LocationIterator(locations, "AAA", "ZZZ")
+    # Part 1
+    part1_iterators = [LocationIterator(locations, "AAA", "ZZZ")]
 
-    part1 = 1
-    while not locationIterator.iterate(instructions.get_next()):
-        part1 += 1
+    # Part 2
+    start_locations = filter(lambda loc: bool(re.search("\w\wA", loc.name)), locations)
+    part2_iterators = [
+        LocationIterator(locations, loc.name, "\w\wZ") for loc in list(start_locations)
+    ]
 
-    print(part1)
+    # Run 'em!
+    for iterators in (part1_iterators, part2_iterators):
+        steps_needed = []
+        for i, iterator in enumerate(iterators):
+            steps = 0
+            while True:
+                steps += 1
+                if iterator.iterate(instructions.get_next()):
+                    steps_needed.append(steps)
+                    break
+        print(lcm(*steps_needed))
