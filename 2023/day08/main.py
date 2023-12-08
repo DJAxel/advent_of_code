@@ -24,8 +24,25 @@ class InstructionList:
         return self.instructions[self.index]
 
 
-def get_location(locations: list[Location], location_name: str) -> Location:
-    return next(loc for loc in locations if loc.name == location_name)
+class LocationIterator:
+    def __init__(
+        self, locations: list[Location], start_location_name: str, stop_condition: str
+    ) -> None:
+        self.locations = locations
+        self.cur_loc = self.get_location(start_location_name)
+        self.stop_condition = stop_condition
+        # self.steps = 0
+
+    def get_location(self, location_name: str) -> Location:
+        return next(loc for loc in self.locations if loc.name == location_name)
+
+    def iterate(self, instruction: str) -> bool:
+        self.cur_loc = self.get_location(
+            self.cur_loc.get_next_location_name(instruction)
+        )
+        # self.steps += 1
+
+        return bool(re.search(self.stop_condition, self.cur_loc.name))
 
 
 if __name__ == "__main__":
@@ -38,11 +55,10 @@ if __name__ == "__main__":
         for params in [tuple(re.findall(r"\w{3}", line)) for line in lines[1:]]
     ]
 
-    cur_loc = get_location(locations, "AAA")
-    part1 = 0
-    while cur_loc.name != "ZZZ":
-        instruction = instructions.get_next()
-        cur_loc = get_location(locations, cur_loc.get_next_location_name(instruction))
+    locationIterator = LocationIterator(locations, "AAA", "ZZZ")
+
+    part1 = 1
+    while not locationIterator.iterate(instructions.get_next()):
         part1 += 1
 
     print(part1)
