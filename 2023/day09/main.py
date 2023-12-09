@@ -11,10 +11,11 @@ def get_next_value(numbers: list[int]) -> int:
 
 if __name__ == "__main__":
     with open("./2023/day09/input.txt", "r", encoding="utf8") as file:
-        part1 = 0
+        part1, part2 = 0, 0
         for line in file.readlines():
             line = line.strip()
             numbers = [int(n) for n in line.split()]
             part1 += get_next_value(numbers)
+            part2 += get_next_value(list(reversed(numbers)))
 
-    print(part1)
+    print(part1, part2)
