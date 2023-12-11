@@ -37,6 +37,12 @@ class Card:
         return self.value == other.value
 
 
+class JokerCard(Card):
+    @property
+    def value(self) -> int:
+        return -1
+
+
 class Type:
     TYPES = {
         "High card": 5 * [1],
@@ -53,7 +59,9 @@ class Type:
         for card in cards:
             card_dict[card.value] += 1
 
-        sorted_card_dict = sorted(card_dict.values())
+        sorted_card_dict = sorted(card_dict.values()) or [0]
+        sorted_card_dict[-1] += 5 - len(cards)  # Joker values -> highest other value
+
         types_list = list(self.TYPES.values())
         self._value = types_list.index(sorted_card_dict)
 
@@ -61,19 +69,18 @@ class Type:
     def value(self) -> int:
         return self._value
 
-    @property
-    def name(self) -> str:
-        return list(self.TYPES.keys())[self._value]
-
 
 class Hand:
-    _type: Type
-
-    def __init__(self, string: str):
+    def __init__(self, string: str, use_jokers=False):
         cards, bid = string.split()
         self._bid = int(bid)
-        self._cards = [Card(char) for char in cards]
-        self._type = Type(self.cards)
+        self._cards: list[Card] = [
+            JokerCard("J") if use_jokers and char == "J" else Card(char)
+            for char in cards
+        ]
+        self._type = Type(
+            list(filter(lambda card: not isinstance(card, JokerCard), self.cards))
+        )
 
     @property
     def bid(self) -> int:
@@ -101,18 +108,18 @@ class Hand:
             return own_card.value > other_card.value
 
         raise ValueError(f"Values are the same: {self.cards} and {other.cards}")
-        # return False
 
 
 if __name__ == "__main__":
     with open("./2023/day07/input.txt", "r", encoding="utf8") as file:
         lines = [line.rstrip() for line in file]
 
-    hands = [Hand(x) for x in lines]
+    for use_jokers in [False, True]:
+        hands = [Hand(x, use_jokers) for x in lines]
+        answer = 0
 
-    part1 = 0
-    for i, hand in enumerate(sorted(hands)):
-        rank = i + 1
-        part1 += rank * hand.bid
+        for i, hand in enumerate(sorted(hands)):
+            rank = i + 1
+            answer += rank * hand.bid
 
-    print(part1)
+        print(answer)
